@@ -1,0 +1,13 @@
+{
+  "name": "@daily-job-hub/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "start": "uvicorn app.main:app --host 0.0.0.0 --port 8000",
+    "worker": "celery -A app.workers.celery_app.celery_app worker --loglevel=info",
+    "beat": "celery -A app.workers.celery_app.celery_app beat --loglevel=info",
+    "lint": "python -m py_compile app/main.py",
+    "typecheck": "python -m py_compile app/main.py"
+  }
+}

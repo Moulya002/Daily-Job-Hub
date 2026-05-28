@@ -1,0 +1,513 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum JobType {
+  INTERN
+  NEW_GRAD
+  FULL_TIME
+  CONTRACT
+}
+
+enum WorkMode {
+  REMOTE
+  HYBRID
+  ONSITE
+}
+
+enum EmploymentLevel {
+  ENTRY
+  ASSOCIATE
+  MID
+  SENIOR
+}
+
+enum JobStatus {
+  ACTIVE
+  CLOSED
+  EXPIRED
+}
+
+enum ApplicationSource {
+  PLATFORM
+  COMPANY_SITE
+  REFERRAL
+  RECRUITER
+}
+
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  OA
+  PHONE_SCREEN
+  INTERVIEW
+  OFFER
+  REJECTED
+}
+
+enum ResumeStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum AlertChannel {
+  EMAIL
+  IN_APP
+  BOTH
+}
+
+enum AlertFrequency {
+  INSTANT
+  DAILY
+  WEEKLY
+}
+
+enum MessageType {
+  COVER_LETTER
+  RECRUITER_OUTREACH
+  REFERRAL_REQUEST
+  THANK_YOU_NOTE
+}
+
+enum MessageStatus {
+  DRAFT
+  GENERATED
+  EDITED
+  SENT
+}
+
+enum EmbeddingEntityType {
+  JOB
+  RESUME
+  USER_PROFILE
+  ALERT_QUERY
+}
+
+enum ScrapeSourceType {
+  GREENHOUSE
+  LEVER
+  ASHBY
+  YC
+  CUSTOM
+}
+
+enum ScrapeRunStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+}
+
+model User {
+  id                String             @id @default(cuid())
+  email             String             @unique
+  normalizedEmail   String             @unique
+  name              String?
+  image             String?
+  role              Role               @default(USER)
+  headline          String?
+  university        String?
+  graduationYear    Int?
+  targetRoles       String[]
+  targetLocations   String[]
+  needsSponsorship  Boolean            @default(false)
+  isOnboarded       Boolean            @default(false)
+  preferences       Json?
+  lastActiveAt      DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  resumes           Resume[]
+  savedJobs         SavedJob[]
+  applications      Application[]
+  alerts            Alert[]
+  recruiterMessages RecruiterMessage[]
+  accounts          Account[]
+  sessions          Session[]
+  notes             UserNote[]
+  embeddings        Embedding[]
+  resumeAnalyses    ResumeAnalysis[]
+  alertDeliveries   AlertDelivery[]
+  recommendationLog RecommendationLog[]
+
+  @@index([role, createdAt])
+  @@index([graduationYear, needsSponsorship])
+  @@index([lastActiveAt])
+}
+
+model Company {
+  id                String      @id @default(cuid())
+  name              String
+  normalizedName    String      @unique
+  website           String?
+  careersPageUrl    String?
+  logoUrl           String?
+  description       String?
+  headquarters      String?
+  sizeRange         String?
+  sponsorshipPolicy String?
+  techStack         String[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  jobs              Job[]
+  notes             UserNote[]
+
+  @@index([name])
+  @@index([website])
+}
+
+model Job {
+  id                String             @id @default(cuid())
+  externalId        String?
+  sourceType        ScrapeSourceType
+  sourceName        String
+  sourceUrl         String
+  applicationUrl    String
+  title             String
+  normalizedTitle   String
+  description       String
+  descriptionHtml   String?
+  location          String?
+  locationRegion    String?
+  salaryMin         Int?
+  salaryMax         Int?
+  currency          String?            @default("USD")
+  equity            String?
+  workMode          WorkMode?
+  employmentLevel   EmploymentLevel?
+  visaSponsorship   Boolean?
+  requiresClearance Boolean            @default(false)
+  techStack         String[]
+  keywords          String[]
+  jobType           JobType
+  status            JobStatus          @default(ACTIVE)
+  postedAt          DateTime?
+  expiresAt         DateTime?
+  lastSeenAt        DateTime?
+  dedupeHash        String             @unique
+  searchTsv         Unsupported("tsvector")?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  companyId         String
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  savedByUsers      SavedJob[]
+  applications      Application[]
+  embeddings        Embedding[]
+  scrapeEvents      JobScrapeEvent[]
+
+  @@unique([sourceName, externalId])
+  @@index([companyId, status, postedAt])
+  @@index([jobType, workMode, postedAt])
+  @@index([locationRegion, postedAt])
+  @@index([visaSponsorship, workMode])
+  @@index([status, expiresAt])
+  @@index([lastSeenAt])
+  @@index([normalizedTitle])
+}
+
+model Resume {
+  id                 String       @id @default(cuid())
+  fileName           String
+  fileUrl            String
+  fileSizeBytes      Int
+  mimeType           String       @default("application/pdf")
+  checksumSha256     String       @unique
+  status             ResumeStatus @default(PROCESSING)
+  parsedText         String?
+  parsedTextVersion  String?
+  extractedSkills    String[]
+  extractedProjects  Json?
+  extractedEducation Json?
+  extractedExperience Json?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  userId             String
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  embeddings         Embedding[]
+  analyses           ResumeAnalysis[]
+
+  @@index([userId, createdAt])
+  @@index([status, updatedAt])
+}
+
+model Application {
+  id                  String            @id @default(cuid())
+  status              ApplicationStatus @default(SAVED)
+  source              ApplicationSource @default(PLATFORM)
+  notes               String?
+  appliedAt           DateTime?
+  deadline            DateTime?
+  nextStepAt          DateTime?
+  rejectionReason     String?
+  compensationOffered Int?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  userId              String
+  jobId               String
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job                 Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  interviews          Interview[]
+  statusHistory       ApplicationStatusHistory[]
+
+  @@unique([userId, jobId])
+  @@index([userId, status, updatedAt])
+  @@index([jobId, status])
+  @@index([deadline])
+}
+
+model SavedJob {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  preferenceScore Float?
+  userId       String
+  jobId        String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+  @@index([userId, createdAt])
+}
+
+model Alert {
+  id             String         @id @default(cuid())
+  name           String
+  query          String
+  channel        AlertChannel   @default(BOTH)
+  frequency      AlertFrequency @default(DAILY)
+  minMatchScore  Float          @default(0.65)
+  isEnabled      Boolean        @default(true)
+  lastTriggeredAt DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries     AlertDelivery[]
+  embeddings     Embedding[]
+
+  @@index([userId, isEnabled, updatedAt])
+  @@index([lastTriggeredAt])
+}
+
+model RecruiterMessage {
+  id             String        @id @default(cuid())
+  type           MessageType
+  status         MessageStatus @default(GENERATED)
+  companyName    String?
+  roleTitle      String?
+  promptInput    String
+  outputText     String
+  modelName      String?
+  tokensPrompt   Int?
+  tokensOutput   Int?
+  qualityScore   Float?
+  createdAt      DateTime      @default(now())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, createdAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expires])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@index([expires])
+}
+
+model Embedding {
+  id          String              @id @default(cuid())
+  entityType  EmbeddingEntityType
+  modelName   String
+  dimensions  Int                 @default(768)
+  vector      Unsupported("vector(768)")
+  metadata    Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  jobId       String?
+  resumeId    String?
+  userId      String?
+  alertId     String?
+  job         Job?                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume      Resume?             @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  user        User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alert       Alert?              @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, modelName, createdAt])
+  @@index([jobId])
+  @@index([resumeId])
+  @@index([userId])
+  @@index([alertId])
+}
+
+model ResumeAnalysis {
+  id               String   @id @default(cuid())
+  atsScore         Int
+  matchPercentage  Int
+  missingSkills    String[]
+  suggestions      String[]
+  strengths        String[]
+  modelName        String
+  createdAt        DateTime @default(now())
+  userId           String
+  resumeId         String
+  jobId            String?
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume           Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([resumeId, createdAt])
+  @@index([jobId])
+}
+
+model Interview {
+  id            String   @id @default(cuid())
+  roundName     String
+  interviewer   String?
+  scheduledAt   DateTime?
+  completedAt   DateTime?
+  feedback      String?
+  rating        Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, scheduledAt])
+}
+
+model ApplicationStatusHistory {
+  id            String            @id @default(cuid())
+  fromStatus    ApplicationStatus?
+  toStatus      ApplicationStatus
+  changedAt     DateTime          @default(now())
+  reason        String?
+  applicationId String
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, changedAt])
+}
+
+model UserNote {
+  id         String   @id @default(cuid())
+  title      String?
+  body       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId      String?
+  companyId  String?
+  company    Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@index([userId, updatedAt])
+  @@index([jobId])
+  @@index([companyId])
+}
+
+model ScrapeRun {
+  id              String          @id @default(cuid())
+  sourceType      ScrapeSourceType
+  sourceName      String
+  status          ScrapeRunStatus @default(QUEUED)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  jobsSeen        Int             @default(0)
+  jobsInserted    Int             @default(0)
+  jobsUpdated     Int             @default(0)
+  jobsArchived    Int             @default(0)
+  errorMessage    String?
+  traceId         String?
+  createdAt       DateTime        @default(now())
+  scrapeEvents    JobScrapeEvent[]
+
+  @@index([sourceType, createdAt])
+  @@index([status, createdAt])
+}
+
+model JobScrapeEvent {
+  id           String   @id @default(cuid())
+  eventType    String
+  sourceUrl    String?
+  payload      Json?
+  createdAt    DateTime @default(now())
+  jobId        String
+  scrapeRunId  String?
+  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  scrapeRun    ScrapeRun? @relation(fields: [scrapeRunId], references: [id], onDelete: SetNull)
+
+  @@index([jobId, createdAt])
+  @@index([scrapeRunId, createdAt])
+}
+
+model AlertDelivery {
+  id           String   @id @default(cuid())
+  deliveredAt  DateTime @default(now())
+  channel      AlertChannel
+  jobsCount    Int      @default(0)
+  openedAt     DateTime?
+  clickedAt    DateTime?
+  alertId      String
+  userId       String
+  alert        Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([alertId, deliveredAt])
+  @@index([userId, deliveredAt])
+}
+
+model RecommendationLog {
+  id           String   @id @default(cuid())
+  strategy     String
+  requestedAt  DateTime @default(now())
+  latencyMs    Int?
+  resultCount  Int      @default(0)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, requestedAt])
+}
