@@ -3,8 +3,8 @@ import type { JobListItem, SemanticSearchResult } from "@daily-job-hub/types";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 export async function getJobs(): Promise<JobListItem[]> {
-  const response = await fetch(`${API_BASE_URL}/jobs?limit=1000`, {
-    next: { revalidate: 300 }
+  const response = await fetch(`${API_BASE_URL}/jobs?limit=5000`, {
+    cache: "no-store"
   });
   if (!response.ok) return [];
   return (await response.json()) as JobListItem[];

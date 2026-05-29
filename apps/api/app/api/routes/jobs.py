@@ -15,7 +15,7 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 async def get_jobs(
     level: str | None = Query(None, description="Filter by jobType: INTERN, NEW_GRAD, FULL_TIME, CONTRACT"),
     category: str | None = Query(None, description="Filter by company group: FAANG+, Quant, Other"),
-    limit: int = Query(400, ge=1, le=1000),
+    limit: int = Query(400, ge=1, le=5000),
     _rate_limit: None = Depends(check_rate_limit),
     connection: Connection = Depends(get_db_connection),
 ) -> list[JobOut]:
