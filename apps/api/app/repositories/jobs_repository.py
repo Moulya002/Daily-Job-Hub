@@ -7,7 +7,8 @@ def list_jobs(connection: Connection, limit: int = 100) -> list[JobOut]:
     with connection.cursor() as cursor:
         cursor.execute(
             """
-            SELECT j.id, j.title, c.name AS company_name, j.location, j.work_mode,
+            SELECT j.id, j.title, c.name AS company_name, j.location,
+                   j."workMode" AS work_mode,
                    LEFT(j.description, 240) AS summary, j."postedAt" AS posted_at
             FROM "Job" j
             JOIN "Company" c ON c.id = j."companyId"
