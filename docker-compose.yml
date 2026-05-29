@@ -66,6 +66,46 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    command: celery -A app.workers.celery_app worker --loglevel=info -Q scrapers,embeddings,celery
+    environment:
+      ENVIRONMENT: production
+      LOG_JSON: "true"
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/daily_job_hub
+      REDIS_URL: redis://redis:6379
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
+      ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
+      GREENHOUSE_COMPANIES: ${GREENHOUSE_COMPANIES:-}
+      LEVER_COMPANIES: ${LEVER_COMPANIES:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  beat:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    command: celery -A app.workers.celery_app beat --loglevel=info
+    environment:
+      ENVIRONMENT: production
+      LOG_JSON: "true"
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/daily_job_hub
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      worker:
+        condition: service_started
+
   web:
     build:
       context: .

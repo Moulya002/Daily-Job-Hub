@@ -1,3 +1,5 @@
+import logging
+
 from app.db.postgres import open_db_connection
 from app.scrapers.sources import (
     scrape_ashby_jobs,
@@ -6,8 +8,35 @@ from app.scrapers.sources import (
     scrape_yc_jobs,
 )
 from app.services.embedding_service import backfill_job_embeddings
-from app.services.ingestion_service import ingest_adzuna_jobs
+from app.services.ingestion_service import ingest_adzuna_jobs, ingest_all_sources
 from app.workers.celery_app import celery_app
+
+logger = logging.getLogger(__name__)
+
+
+@celery_app.task(bind=True, max_retries=3)
+def ingest_all_sources_task(self, embed: bool = True, embed_limit: int = 500) -> dict:
+    """Daily pipeline: ingest every configured source, then backfill embeddings.
+
+    This is the task the beat scheduler runs so the board refreshes itself
+    without any manual trigger.
+    """
+    connection = open_db_connection()
+    try:
+        result = ingest_all_sources(connection)
+        if embed:
+            result["embeddings"] = backfill_job_embeddings(connection, limit=embed_limit)
+        logger.info(
+            "Daily ingest complete: inserted=%s updated=%s",
+            result.get("total_jobs_inserted"),
+            result.get("total_jobs_updated"),
+        )
+        return result
+    except Exception as exc:  # pragma: no cover
+        logger.exception("Daily ingest failed")
+        raise self.retry(exc=exc, countdown=300) from exc
+    finally:
+        connection.close()
 
 
 @celery_app.task(bind=True, max_retries=3)

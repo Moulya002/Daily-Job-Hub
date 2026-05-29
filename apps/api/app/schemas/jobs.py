@@ -6,18 +6,25 @@ from pydantic import BaseModel
 class JobOut(BaseModel):
     id: str
     title: str
-    company_name: str
+    companyName: str
     location: str | None = None
-    work_mode: str | None = None
+    workMode: str | None = None
     summary: str
-    posted_at: datetime | None = None
+    jobType: str | None = None
+    category: str = "Other"
+    salaryMin: int | None = None
+    salaryMax: int | None = None
+    currency: str | None = None
+    applyUrl: str | None = None
+    postedAt: datetime | None = None
 
 
 class SemanticSearchResult(BaseModel):
     id: str
     title: str
-    company_name: str
+    companyName: str
     location: str | None = None
-    work_mode: str | None = None
+    workMode: str | None = None
     summary: str
+    category: str = "Other"
     score: float

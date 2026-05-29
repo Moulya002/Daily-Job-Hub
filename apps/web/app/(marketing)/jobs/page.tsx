@@ -1,4 +1,4 @@
-import { JobCard } from "@/components/common/job-card";
+import { JobsBrowser } from "@/components/common/jobs-browser";
 import { PageHeader } from "@/components/common/page-header";
 import { getJobs } from "@/lib/api";
 import { JobsStateHydrator } from "@/components/common/jobs-state-hydrator";
@@ -13,11 +13,7 @@ export default async function JobsPage() {
         title="Internship and New Grad Jobs"
         description="Fresh listings from Greenhouse, Lever, Ashby, YC Jobs, and curated company career pages."
       />
-      <div className="grid gap-4 md:grid-cols-2">
-        {jobs.map((job) => (
-          <JobCard key={job.id} job={job} />
-        ))}
-      </div>
+      <JobsBrowser jobs={jobs} />
     </section>
   );
 }

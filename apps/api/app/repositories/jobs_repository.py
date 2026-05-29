@@ -1,24 +1,61 @@
 from psycopg import Connection
+from psycopg.rows import dict_row
 
+from app.core.categories import categorize_company
 from app.schemas.jobs import JobOut, SemanticSearchResult
 
 
-def list_jobs(connection: Connection, limit: int = 100) -> list[JobOut]:
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            SELECT j.id, j.title, c.name AS company_name, j.location,
-                   j."workMode" AS work_mode,
-                   LEFT(j.description, 240) AS summary, j."postedAt" AS posted_at
-            FROM "Job" j
-            JOIN "Company" c ON c.id = j."companyId"
-            ORDER BY j."postedAt" DESC NULLS LAST, j."createdAt" DESC
-            LIMIT %s
-            """,
-            (limit,),
-        )
+def list_jobs(
+    connection: Connection,
+    limit: int = 400,
+    *,
+    level: str | None = None,
+    category: str | None = None,
+) -> list[JobOut]:
+    """Return active jobs, optionally filtered by level (jobType) and category.
+
+    ``category`` (FAANG+/Quant/Other) is derived from the company name in
+    Python, so it is applied after fetching. ``level`` maps to the jobType
+    column and is filtered in SQL.
+    """
+    params: list[object] = []
+    where = ["j.status = 'ACTIVE'"]
+    if level and level.upper() != "ALL":
+        where.append('j."jobType" = %s')
+        params.append(level.upper())
+
+    # Fetch a generous window so the in-Python category filter still has rows.
+    fetch_limit = max(limit * 4, limit) if category and category.lower() != "all" else limit
+    params.append(fetch_limit)
+
+    sql = f"""
+        SELECT j.id, j.title, c.name AS "companyName", j.location,
+               j."workMode" AS "workMode", j."jobType" AS "jobType",
+               j."salaryMin" AS "salaryMin", j."salaryMax" AS "salaryMax",
+               j.currency, j."applicationUrl" AS "applyUrl",
+               j."postedAt" AS "postedAt",
+               LEFT(j.description, 240) AS summary
+        FROM "Job" j
+        JOIN "Company" c ON c.id = j."companyId"
+        WHERE {" AND ".join(where)}
+        ORDER BY j."postedAt" DESC NULLS LAST, j."createdAt" DESC
+        LIMIT %s
+    """
+
+    with connection.cursor(row_factory=dict_row) as cursor:
+        cursor.execute(sql, tuple(params))
         rows = cursor.fetchall()
-    return [JobOut(**row) for row in rows]
+
+    jobs: list[JobOut] = []
+    wanted = category.strip() if category else None
+    for row in rows:
+        row["category"] = categorize_company(row["companyName"])
+        if wanted and wanted.lower() != "all" and row["category"] != wanted:
+            continue
+        jobs.append(JobOut(**row))
+        if len(jobs) >= limit:
+            break
+    return jobs
 
 
 def semantic_search_jobs(
@@ -27,15 +64,15 @@ def semantic_search_jobs(
     limit: int = 25,
 ) -> list[SemanticSearchResult]:
     vector_literal = "[" + ",".join(str(x) for x in query_embedding) + "]"
-    with connection.cursor() as cursor:
+    with connection.cursor(row_factory=dict_row) as cursor:
         cursor.execute(
             """
             SELECT
               j.id,
               j.title,
-              c.name AS company_name,
+              c.name AS "companyName",
               j.location,
-              j."workMode" AS work_mode,
+              j."workMode" AS "workMode",
               LEFT(j.description, 240) AS summary,
               1 - (e.vector <=> %s::vector) AS score
             FROM "Job" j
@@ -48,4 +85,8 @@ def semantic_search_jobs(
             (vector_literal, vector_literal, limit),
         )
         rows = cursor.fetchall()
-    return [SemanticSearchResult(**row) for row in rows]
+    results: list[SemanticSearchResult] = []
+    for row in rows:
+        row["category"] = categorize_company(row["companyName"])
+        results.append(SemanticSearchResult(**row))
+    return results
