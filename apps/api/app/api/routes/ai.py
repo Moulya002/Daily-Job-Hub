@@ -10,8 +10,8 @@ from app.schemas.ai import (
     ResumeAnalysisResponse,
     ResumeUploadResponse,
 )
-from app.services.pdf_service import extract_skills_from_text, extract_text_from_pdf_bytes
 from app.services.ai_service import generate_text
+from app.services.pdf_service import extract_skills_from_text, extract_text_from_pdf_bytes
 from app.services.resume_service import analyze_resume_against_job
 
 router = APIRouter(prefix="/ai", tags=["ai"])

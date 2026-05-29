@@ -1,0 +1,16 @@
+**/node_modules
+**/.next
+**/.turbo
+**/.venv
+**/__pycache__
+**/*.pyc
+**/*.egg-info
+**/.git
+.env
+**/.env
+**/.env.*
+!**/.env.example
+**/dist
+**/coverage
+**/.ruff_cache
+**/.mypy_cache

@@ -57,7 +57,8 @@ def log_job_scrape_event(
     with connection.cursor() as cursor:
         cursor.execute(
             """
-            INSERT INTO "JobScrapeEvent" (id, "eventType", "sourceUrl", payload, "createdAt", "jobId", "scrapeRunId")
+            INSERT INTO "JobScrapeEvent"
+              (id, "eventType", "sourceUrl", payload, "createdAt", "jobId", "scrapeRunId")
             VALUES (gen_random_uuid()::text, %s, %s, %s::jsonb, NOW(), %s, %s)
             """,
             (event_type, source_url, payload, job_id, scrape_run_id),

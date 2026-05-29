@@ -20,7 +20,7 @@ def scrape_all_sources(self) -> dict[str, int]:
             "yc": len(scrape_yc_jobs()),
         }
     except Exception as exc:  # pragma: no cover
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 @celery_app.task(bind=True, max_retries=3)
@@ -29,7 +29,7 @@ def ingest_adzuna(self) -> dict:
     try:
         return ingest_adzuna_jobs(connection)
     except Exception as exc:  # pragma: no cover
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
     finally:
         connection.close()
 
@@ -40,6 +40,6 @@ def generate_job_embeddings(self, limit: int = 200) -> dict:
     try:
         return backfill_job_embeddings(connection, limit=limit)
     except Exception as exc:  # pragma: no cover
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
     finally:
         connection.close()

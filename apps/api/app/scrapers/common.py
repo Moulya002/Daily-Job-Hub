@@ -1,9 +1,9 @@
 """Shared types and helpers for all job-board ingestion sources."""
 
-from dataclasses import dataclass, field
-from datetime import datetime
 import hashlib
 import re
+from dataclasses import dataclass, field
+from datetime import datetime
 
 # Keywords used to keep ingestion focused on intern / new-grad / early-career tech roles.
 # Kept specific to avoid false positives like "AI Sales" or "Data Entry".
@@ -85,7 +85,8 @@ def infer_job_type(title: str, description: str = "") -> str:
     text = f"{title} {description}".lower()
     if any(token in text for token in ("intern", "internship", "co-op", "co op")):
         return "INTERN"
-    if any(token in text for token in ("new grad", "new graduate", "entry level", "entry-level", "early career")):
+    new_grad_tokens = ("new grad", "new graduate", "entry level", "entry-level", "early career")
+    if any(token in text for token in new_grad_tokens):
         return "NEW_GRAD"
     return "FULL_TIME"
 

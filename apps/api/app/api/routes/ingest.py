@@ -4,16 +4,16 @@ from psycopg import Connection
 from app.api.deps.rate_limit import check_rate_limit
 from app.core.config import settings
 from app.db.postgres import get_db_connection
+from app.scrapers.greenhouse import fetch_greenhouse_jobs
+from app.scrapers.lever import fetch_lever_jobs
+from app.scrapers.remoteok import fetch_remoteok_jobs
+from app.scrapers.remotive import fetch_remotive_jobs
 from app.services.embedding_service import backfill_job_embeddings
 from app.services.ingestion_service import (
     ingest_adzuna_jobs,
     ingest_all_sources,
     ingest_normalized_jobs,
 )
-from app.scrapers.greenhouse import fetch_greenhouse_jobs
-from app.scrapers.lever import fetch_lever_jobs
-from app.scrapers.remoteok import fetch_remoteok_jobs
-from app.scrapers.remotive import fetch_remotive_jobs
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 

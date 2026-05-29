@@ -3,7 +3,7 @@
 Per-company boards: https://api.lever.co/v0/postings/{slug}?mode=json
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -46,7 +46,7 @@ def _map_item(item: dict, company: str) -> NormalizedJob | None:
     posted_at = None
     created = item.get("createdAt")
     if isinstance(created, (int, float)):
-        posted_at = datetime.fromtimestamp(created / 1000, tz=timezone.utc)
+        posted_at = datetime.fromtimestamp(created / 1000, tz=UTC)
 
     return NormalizedJob(
         external_id=external_id,

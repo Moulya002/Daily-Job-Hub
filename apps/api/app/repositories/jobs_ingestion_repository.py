@@ -1,9 +1,10 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from psycopg import Connection
 
 from app.scrapers.adzuna import AdzunaJob, build_dedupe_hash
-from app.scrapers.common import NormalizedJob, build_dedupe_hash as build_normalized_dedupe_hash
+from app.scrapers.common import NormalizedJob
+from app.scrapers.common import build_dedupe_hash as build_normalized_dedupe_hash
 
 
 def upsert_company(connection: Connection, *, name: str, normalized_name: str) -> str:
@@ -28,7 +29,7 @@ def upsert_company(connection: Connection, *, name: str, normalized_name: str) -
 def upsert_job_from_adzuna(connection: Connection, *, company_id: str, job: AdzunaJob) -> str:
     dedupe_hash = build_dedupe_hash(job)
     normalized_title = job.title.strip().lower()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -90,7 +91,7 @@ def upsert_normalized_job(
 ) -> str:
     dedupe_hash = build_normalized_dedupe_hash(job)
     normalized_title = job.title.strip().lower()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     with connection.cursor() as cursor:
         cursor.execute(

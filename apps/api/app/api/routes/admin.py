@@ -42,7 +42,8 @@ async def list_alert_deliveries(
             cursor.execute(
                 """
                 SELECT id, "deliveredAt" AS delivered_at, channel, "jobsCount" AS jobs_count,
-                       "openedAt" AS opened_at, "clickedAt" AS clicked_at, "alertId" AS alert_id, "userId" AS user_id
+                       "openedAt" AS opened_at, "clickedAt" AS clicked_at,
+                       "alertId" AS alert_id, "userId" AS user_id
                 FROM "AlertDelivery"
                 WHERE "userId" = %s
                 ORDER BY "deliveredAt" DESC
@@ -54,7 +55,8 @@ async def list_alert_deliveries(
             cursor.execute(
                 """
                 SELECT id, "deliveredAt" AS delivered_at, channel, "jobsCount" AS jobs_count,
-                       "openedAt" AS opened_at, "clickedAt" AS clicked_at, "alertId" AS alert_id, "userId" AS user_id
+                       "openedAt" AS opened_at, "clickedAt" AS clicked_at,
+                       "alertId" AS alert_id, "userId" AS user_id
                 FROM "AlertDelivery"
                 ORDER BY "deliveredAt" DESC
                 LIMIT %s
