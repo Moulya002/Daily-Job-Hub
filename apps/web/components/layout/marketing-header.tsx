@@ -6,7 +6,7 @@ const links = [
   { href: "/jobs", label: "Jobs" },
   { href: "/search", label: "AI Search" },
   { href: "/dashboard", label: "Dashboard" }
-];
+] as const;
 
 export async function MarketingHeader() {
   return (

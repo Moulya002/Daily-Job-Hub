@@ -12,7 +12,7 @@ const navItems = [
   { href: "/saved-jobs", label: "Saved", icon: Sparkles },
   { href: "/resume-analysis", label: "Resume", icon: FileText },
   { href: "/settings", label: "Settings", icon: Settings }
-];
+] as const;
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const session = await auth();
