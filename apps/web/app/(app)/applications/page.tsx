@@ -4,7 +4,7 @@ import { ApplicationsClient } from "@/components/common/applications-client";
 import { getJobs } from "@/lib/api";
 
 export default async function ApplicationsPage() {
-  const jobs = await getJobs();
+  const jobs = await getJobs({ limit: 100 });
 
   return (
     <section className="space-y-6">

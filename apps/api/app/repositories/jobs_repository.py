@@ -6,6 +6,29 @@ from app.schemas.jobs import JobOut, SemanticSearchResult
 from app.scrapers.common import plain_text_summary
 
 
+def job_level_counts(connection: Connection) -> dict[str, int]:
+    """Lightweight counts for filter pills (avoids loading thousands of jobs)."""
+    with connection.cursor(row_factory=dict_row) as cursor:
+        cursor.execute(
+            """
+            SELECT "jobType" AS level, count(*)::int AS n
+            FROM "Job"
+            WHERE status = 'ACTIVE'
+            GROUP BY "jobType"
+            """
+        )
+        rows = cursor.fetchall()
+    by_level = {row["level"]: row["n"] for row in rows}
+    total = sum(by_level.values())
+    return {
+        "ALL": total,
+        "INTERN": by_level.get("INTERN", 0),
+        "NEW_GRAD": by_level.get("NEW_GRAD", 0),
+        "FULL_TIME": by_level.get("FULL_TIME", 0),
+        "CONTRACT": by_level.get("CONTRACT", 0),
+    }
+
+
 def list_jobs(
     connection: Connection,
     limit: int = 400,

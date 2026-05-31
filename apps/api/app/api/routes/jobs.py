@@ -3,7 +3,7 @@ from psycopg import Connection
 
 from app.api.deps.rate_limit import check_rate_limit
 from app.db.postgres import get_db_connection
-from app.repositories.jobs_repository import list_jobs
+from app.repositories.jobs_repository import job_level_counts, list_jobs
 from app.repositories.user_activity_repository import mark_applied, save_job, unmark_applied, unsave_job
 from app.schemas.jobs import JobOut
 from app.schemas.user_activity import ActionResponse
@@ -11,11 +11,19 @@ from app.schemas.user_activity import ActionResponse
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
+@router.get("/stats")
+async def get_job_stats(
+    _rate_limit: None = Depends(check_rate_limit),
+    connection: Connection = Depends(get_db_connection),
+) -> dict[str, int]:
+    return job_level_counts(connection)
+
+
 @router.get("", response_model=list[JobOut])
 async def get_jobs(
     level: str | None = Query(None, description="Filter by jobType: INTERN, NEW_GRAD, FULL_TIME, CONTRACT"),
     category: str | None = Query(None, description="Filter by company group: FAANG+, Quant, Other"),
-    limit: int = Query(400, ge=1, le=5000),
+    limit: int = Query(60, ge=1, le=200),
     _rate_limit: None = Depends(check_rate_limit),
     connection: Connection = Depends(get_db_connection),
 ) -> list[JobOut]:
