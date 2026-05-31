@@ -16,6 +16,20 @@ DEFAULT_QUERIES = [
     "entry level software engineer",
     "machine learning intern",
     "data science intern",
+    "backend intern",
+    "frontend intern",
+    "full stack intern",
+    "computer science intern",
+    "graduate software engineer",
+    "university graduate engineer",
+    "associate software engineer",
+    "junior software developer",
+    "data engineer intern",
+    "devops intern",
+    "product engineer intern",
+    "ai engineer intern",
+    "2026 software engineer",
+    "campus software engineer",
 ]
 
 

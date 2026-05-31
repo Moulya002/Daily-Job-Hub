@@ -37,10 +37,11 @@ class Settings(BaseSettings):
     adzuna_app_id: str = ""
     adzuna_app_key: str = ""
     adzuna_country: str = "us"
-    adzuna_max_pages_per_query: int = 2
+    adzuna_max_pages_per_query: int = 3
     embedding_backfill_limit: int = 200
     greenhouse_companies: str = ""
     lever_companies: str = ""
+    ashby_companies: str = ""
 
     # --- API behavior ---
     rate_limit_per_minute: int = 120

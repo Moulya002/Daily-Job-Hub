@@ -11,11 +11,15 @@ from app.repositories.jobs_ingestion_repository import (
 )
 from app.repositories.scrape_repository import complete_scrape_run, create_scrape_run
 from app.scrapers.adzuna import DEFAULT_QUERIES, fetch_adzuna_jobs
+from app.scrapers.arbeitnow import fetch_arbeitnow_jobs
+from app.scrapers.ashby import fetch_ashby_jobs
 from app.scrapers.common import NormalizedJob
 from app.scrapers.greenhouse import fetch_greenhouse_jobs
+from app.scrapers.jobicy import fetch_jobicy_jobs
 from app.scrapers.lever import fetch_lever_jobs
 from app.scrapers.remoteok import fetch_remoteok_jobs
 from app.scrapers.remotive import fetch_remotive_jobs
+from app.scrapers.yc import fetch_yc_jobs
 
 
 def _normalize_company_name(name: str) -> str:
@@ -101,12 +105,17 @@ def ingest_all_sources(connection: Connection) -> dict:
         _split_csv(settings.greenhouse_companies) if settings.greenhouse_companies else None
     )
     lever_companies = _split_csv(settings.lever_companies) if settings.lever_companies else None
+    ashby_companies = _split_csv(settings.ashby_companies) if settings.ashby_companies else None
 
     sources: list[tuple[str, str, Callable[[], list[NormalizedJob]]]] = [
-        ("CUSTOM", "remotive", fetch_remotive_jobs),
-        ("CUSTOM", "remoteok", fetch_remoteok_jobs),
+        ("YC", "yc", fetch_yc_jobs),
+        ("ASHBY", "ashby", lambda: fetch_ashby_jobs(companies=ashby_companies)),
         ("GREENHOUSE", "greenhouse", lambda: fetch_greenhouse_jobs(companies=greenhouse_companies)),
         ("LEVER", "lever", lambda: fetch_lever_jobs(companies=lever_companies)),
+        ("CUSTOM", "remotive", fetch_remotive_jobs),
+        ("CUSTOM", "remoteok", fetch_remoteok_jobs),
+        ("CUSTOM", "arbeitnow", fetch_arbeitnow_jobs),
+        ("CUSTOM", "jobicy", fetch_jobicy_jobs),
     ]
 
     results = []

@@ -85,7 +85,23 @@ def infer_job_type(title: str, description: str = "") -> str:
     text = f"{title} {description}".lower()
     if any(token in text for token in ("intern", "internship", "co-op", "co op")):
         return "INTERN"
-    new_grad_tokens = ("new grad", "new graduate", "entry level", "entry-level", "early career")
+    new_grad_tokens = (
+        "new grad",
+        "new graduate",
+        "entry level",
+        "entry-level",
+        "early career",
+        "university grad",
+        "college grad",
+        "campus hire",
+        "campus recruiting",
+        "2026 grad",
+        "2027 grad",
+        "recent graduate",
+        "associate software",
+        "associate engineer",
+        "rotational program",
+    )
     if any(token in text for token in new_grad_tokens):
         return "NEW_GRAD"
     return "FULL_TIME"

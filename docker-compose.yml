@@ -82,6 +82,7 @@ services:
       ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
       GREENHOUSE_COMPANIES: ${GREENHOUSE_COMPANIES:-}
       LEVER_COMPANIES: ${LEVER_COMPANIES:-}
+      ASHBY_COMPANIES: ${ASHBY_COMPANIES:-}
     depends_on:
       db:
         condition: service_healthy

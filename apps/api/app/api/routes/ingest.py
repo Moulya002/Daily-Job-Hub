@@ -90,13 +90,17 @@ def ingest_from_lever(
 
 @router.post("/all")
 def ingest_from_all_sources(
-    backfill: bool = Query(True, description="Generate embeddings after ingestion."),
+    backfill: bool = Query(
+        False,
+        description="Generate embeddings after ingestion (can be slow; Celery runs this on a schedule).",
+    ),
+    embed_limit: int = Query(200, ge=1, le=500),
     _rate_limit: None = Depends(check_rate_limit),
     connection: Connection = Depends(get_db_connection),
 ) -> dict:
     result = ingest_all_sources(connection)
     if backfill:
-        result["embeddings"] = backfill_job_embeddings(connection, limit=1000)
+        result["embeddings"] = backfill_job_embeddings(connection, limit=embed_limit)
     return result
 
 

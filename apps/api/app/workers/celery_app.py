@@ -26,10 +26,15 @@ celery_app.conf.update(
     },
     # Scheduled (beat) jobs so the board refreshes automatically.
     beat_schedule={
-        # Full ingest + embedding backfill once a day at 06:00 UTC.
-        "daily-ingest-all-sources": {
+        # Full ingest + embeddings twice daily (06:00 and 18:00 UTC).
+        "daily-ingest-morning": {
             "task": "app.workers.tasks.ingest_all_sources_task",
             "schedule": crontab(hour=6, minute=0),
+            "kwargs": {"embed": True, "embed_limit": 500},
+        },
+        "daily-ingest-evening": {
+            "task": "app.workers.tasks.ingest_all_sources_task",
+            "schedule": crontab(hour=18, minute=0),
             "kwargs": {"embed": True, "embed_limit": 500},
         },
         # Top up any remaining embeddings every 30 minutes (rate-limit friendly).
