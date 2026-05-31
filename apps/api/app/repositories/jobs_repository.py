@@ -2,8 +2,8 @@ from psycopg import Connection
 from psycopg.rows import dict_row
 
 from app.core.categories import categorize_company
-from app.scrapers.common import plain_text_summary
 from app.schemas.jobs import JobOut, SemanticSearchResult
+from app.scrapers.common import plain_text_summary
 
 
 def list_jobs(
