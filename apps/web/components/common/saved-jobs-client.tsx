@@ -1,18 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import type { JobListItem } from "@daily-job-hub/types";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { JobCard } from "@/components/common/job-card";
-import { useJobStore } from "@/store/useJobStore";
 
-export function SavedJobsClient() {
-  const jobs = useJobStore((state) => state.jobs);
-  const savedJobIds = useJobStore((state) => state.savedJobIds);
-
-  const savedJobs = useMemo(() => jobs.filter((job) => savedJobIds.includes(job.id)), [jobs, savedJobIds]);
-
-  if (!savedJobs.length) {
+export function SavedJobsClient({ jobs }: { jobs: JobListItem[] }) {
+  if (!jobs.length) {
     return (
       <EmptyState
         title="No saved jobs yet"
@@ -23,7 +17,7 @@ export function SavedJobsClient() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {savedJobs.map((job) => (
+      {jobs.map((job) => (
         <JobCard key={job.id} job={job} />
       ))}
     </div>

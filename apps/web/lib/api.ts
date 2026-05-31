@@ -44,6 +44,24 @@ export async function semanticSearch(query: string): Promise<SemanticSearchResul
   return (await response.json()) as SemanticSearchResult[];
 }
 
+export async function getSavedJobsForUser(userId: string): Promise<JobListItem[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/users/${encodeURIComponent(userId)}/saved-jobs/jobs`,
+    { cache: "no-store" }
+  );
+  if (!response.ok) return [];
+  return (await response.json()) as JobListItem[];
+}
+
+export async function getAppliedJobsForUser(userId: string): Promise<JobListItem[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/users/${encodeURIComponent(userId)}/applications/jobs`,
+    { cache: "no-store" }
+  );
+  if (!response.ok) return [];
+  return (await response.json()) as JobListItem[];
+}
+
 export async function getRecommendations(userId: string): Promise<JobListItem[]> {
   const response = await fetch(`${API_BASE_URL}/recommendations?user_id=${encodeURIComponent(userId)}`, {
     next: { revalidate: 300 }

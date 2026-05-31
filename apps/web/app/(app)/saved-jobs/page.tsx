@@ -1,20 +1,20 @@
+import { auth } from "@/auth";
 import { PageHeader } from "@/components/common/page-header";
-import { JobsStateHydrator } from "@/components/common/jobs-state-hydrator";
 import { SavedJobsClient } from "@/components/common/saved-jobs-client";
-import { getJobs } from "@/lib/api";
+import { getSavedJobsForUser } from "@/lib/api";
 
 export default async function SavedJobsPage() {
-  const jobs = await getJobs({ limit: 100 });
+  const session = await auth();
+  const jobs = session?.user?.id ? await getSavedJobsForUser(session.user.id) : [];
 
   return (
     <section className="space-y-6">
-      <JobsStateHydrator jobs={jobs} />
       <PageHeader
         title="Saved Jobs"
         description="Shortlist roles for follow-up, referrals, and interview preparation."
         actionLabel="Create Alert"
       />
-      <SavedJobsClient />
+      <SavedJobsClient jobs={jobs} />
     </section>
   );
 }

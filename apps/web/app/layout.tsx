@@ -1,6 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
 
+import { AuthSessionProvider } from "@/components/providers/session-provider";
+
 export const metadata: Metadata = {
   title: "Daily Job Hub",
   description: "AI-powered internship and new grad platform",
@@ -13,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-950 text-slate-100 antialiased">
-        <main>{children}</main>
+        <AuthSessionProvider>
+          <main>{children}</main>
+        </AuthSessionProvider>
       </body>
     </html>
   );

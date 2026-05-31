@@ -1,16 +1,19 @@
-import { JobsStateHydrator } from "@/components/common/jobs-state-hydrator";
-import { PageHeader } from "@/components/common/page-header";
+import { auth } from "@/auth";
 import { ApplicationsClient } from "@/components/common/applications-client";
-import { getJobs } from "@/lib/api";
+import { PageHeader } from "@/components/common/page-header";
+import { getAppliedJobsForUser } from "@/lib/api";
 
 export default async function ApplicationsPage() {
-  const jobs = await getJobs({ limit: 100 });
+  const session = await auth();
+  const jobs = session?.user?.id ? await getAppliedJobsForUser(session.user.id) : [];
 
   return (
     <section className="space-y-6">
-      <JobsStateHydrator jobs={jobs} />
-      <PageHeader title="Applications" description="Track every stage from saved to offer with notes and reminders." />
-      <ApplicationsClient />
+      <PageHeader
+        title="Applications"
+        description="Track every stage from saved to offer with notes and reminders."
+      />
+      <ApplicationsClient jobs={jobs} />
     </section>
   );
 }

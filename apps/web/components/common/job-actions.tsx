@@ -1,25 +1,39 @@
 "use client";
 
 import { useState } from "react";
+import { signIn, useSession } from "next-auth/react";
 
 import { applyJob, saveJob, unapplyJob, unsaveJob } from "@/lib/client-api";
 import { Button } from "@/components/ui/button";
 import { useJobStore } from "@/store/useJobStore";
 
 export function JobActions({ jobId }: { jobId: string }) {
+  const { data: session, status } = useSession();
   const savedJobIds = useJobStore((state) => state.savedJobIds);
   const appliedJobIds = useJobStore((state) => state.appliedJobIds);
   const toggleSaveJob = useJobStore((state) => state.toggleSaveJob);
   const toggleAppliedJob = useJobStore((state) => state.toggleAppliedJob);
   const [isSaving, setIsSaving] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
+  const isSignedIn = Boolean(session?.user);
   const isSaved = savedJobIds.includes(jobId);
   const isApplied = appliedJobIds.includes(jobId);
 
+  const requireSignIn = async (): Promise<boolean> => {
+    if (isSignedIn) return true;
+    setMessage("Sign in with GitHub to save and track applications.");
+    await signIn("github");
+    return false;
+  };
+
   const onSaveToggle = async () => {
-    if (isSaving) return;
+    if (isSaving || status === "loading") return;
+    if (!(await requireSignIn())) return;
+
     setIsSaving(true);
+    setMessage(null);
     const wasSaved = isSaved;
     toggleSaveJob(jobId);
     try {
@@ -30,14 +44,18 @@ export function JobActions({ jobId }: { jobId: string }) {
       }
     } catch {
       toggleSaveJob(jobId);
+      setMessage("Could not update saved jobs. Try again.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const onApplyToggle = async () => {
-    if (isApplying) return;
+    if (isApplying || status === "loading") return;
+    if (!(await requireSignIn())) return;
+
     setIsApplying(true);
+    setMessage(null);
     const wasApplied = isApplied;
     toggleAppliedJob(jobId);
     try {
@@ -48,19 +66,26 @@ export function JobActions({ jobId }: { jobId: string }) {
       }
     } catch {
       toggleAppliedJob(jobId);
+      setMessage("Could not update application status. Try again.");
     } finally {
       setIsApplying(false);
     }
   };
 
   return (
-    <div className="flex gap-2">
-      <Button variant={isSaved ? "secondary" : "outline"} size="sm" onClick={onSaveToggle} disabled={isSaving}>
-        {isSaved ? "Saved" : "Save"}
-      </Button>
-      <Button variant={isApplied ? "secondary" : "default"} size="sm" onClick={onApplyToggle} disabled={isApplying}>
-        {isApplied ? "Applied" : "Mark Applied"}
-      </Button>
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex gap-2">
+        <Button variant={isSaved ? "secondary" : "outline"} size="sm" onClick={onSaveToggle} disabled={isSaving}>
+          {isSaved ? "Saved" : "Save"}
+        </Button>
+        <Button variant={isApplied ? "secondary" : "default"} size="sm" onClick={onApplyToggle} disabled={isApplying}>
+          {isApplied ? "Applied" : "Mark Applied"}
+        </Button>
+      </div>
+      {message ? <p className="max-w-[14rem] text-right text-xs text-amber-400">{message}</p> : null}
+      {!isSignedIn && status !== "loading" ? (
+        <p className="text-right text-xs text-slate-500">Sign in to sync across devices</p>
+      ) : null}
     </div>
   );
 }
