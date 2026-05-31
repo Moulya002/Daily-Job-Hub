@@ -2,6 +2,7 @@ from psycopg import Connection
 from psycopg.rows import dict_row
 
 from app.core.categories import categorize_company
+from app.scrapers.common import plain_text_summary
 from app.schemas.jobs import JobOut, SemanticSearchResult
 
 
@@ -34,7 +35,7 @@ def list_jobs(
                j."salaryMin" AS "salaryMin", j."salaryMax" AS "salaryMax",
                j.currency, j."applicationUrl" AS "applyUrl",
                j."postedAt" AS "postedAt",
-               LEFT(j.description, 240) AS summary
+               j.description AS summary
         FROM "Job" j
         JOIN "Company" c ON c.id = j."companyId"
         WHERE {" AND ".join(where)}
@@ -50,6 +51,7 @@ def list_jobs(
     wanted = category.strip() if category else None
     for row in rows:
         row["category"] = categorize_company(row["companyName"])
+        row["summary"] = plain_text_summary(row.get("summary"))
         if wanted and wanted.lower() != "all" and row["category"] != wanted:
             continue
         jobs.append(JobOut(**row))
@@ -73,7 +75,7 @@ def semantic_search_jobs(
               c.name AS "companyName",
               j.location,
               j."workMode" AS "workMode",
-              LEFT(j.description, 240) AS summary,
+              j.description AS summary,
               1 - (e.vector <=> %s::vector) AS score
             FROM "Job" j
             JOIN "Company" c ON c.id = j."companyId"
@@ -88,5 +90,6 @@ def semantic_search_jobs(
     results: list[SemanticSearchResult] = []
     for row in rows:
         row["category"] = categorize_company(row["companyName"])
+        row["summary"] = plain_text_summary(row.get("summary"))
         results.append(SemanticSearchResult(**row))
     return results

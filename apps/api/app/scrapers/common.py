@@ -1,6 +1,7 @@
 """Shared types and helpers for all job-board ingestion sources."""
 
 import hashlib
+import html
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -41,7 +42,8 @@ RELEVANT_KEYWORDS = (
     "android developer",
 )
 
-_TAG_RE = re.compile(r"<[^>]+>")
+_TAG_RE = re.compile(r"<[^>]+>", re.DOTALL)
+_SCRIPT_STYLE_RE = re.compile(r"<(script|style)[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE)
 _WS_RE = re.compile(r"\s+")
 
 
@@ -67,18 +69,26 @@ def normalize_text(value: str) -> str:
 
 
 def strip_html(value: str | None) -> str:
+    """Turn HTML job descriptions into plain text for storage and display."""
     if not value:
         return ""
-    text = _TAG_RE.sub(" ", value)
-    text = (
-        text.replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", '"')
-        .replace("&#39;", "'")
-        .replace("&nbsp;", " ")
-    )
+    text = html.unescape(value)
+    text = _SCRIPT_STYLE_RE.sub(" ", text)
+    text = _TAG_RE.sub(" ", text)
+    # Some feeds double-encode entities after tags are removed.
+    text = html.unescape(text)
     return _WS_RE.sub(" ", text).strip()
+
+
+def plain_text_summary(value: str | None, *, max_len: int = 240) -> str:
+    """Plain-text snippet for cards (never mid-tag; strips HTML first)."""
+    cleaned = strip_html(value)
+    if len(cleaned) <= max_len:
+        return cleaned
+    snippet = cleaned[:max_len]
+    if " " in snippet:
+        snippet = snippet.rsplit(" ", 1)[0]
+    return f"{snippet}…"
 
 
 def infer_job_type(title: str, description: str = "") -> str:

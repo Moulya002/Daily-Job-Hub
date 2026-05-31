@@ -6,6 +6,7 @@ from datetime import datetime
 import httpx
 
 from app.core.config import settings
+from app.scrapers.common import strip_html
 
 ADZUNA_BASE = "https://api.adzuna.com/v1/api/jobs"
 
@@ -74,7 +75,7 @@ def _parse_posted_at(raw: str | None) -> datetime | None:
 def _map_result(item: dict) -> AdzunaJob | None:
     title = (item.get("title") or "").strip()
     company = ((item.get("company") or {}).get("display_name") or "").strip()
-    description = (item.get("description") or "").strip()
+    description = strip_html(item.get("description"))
     redirect_url = (item.get("redirect_url") or item.get("url") or "").strip()
     external_id = str(item.get("id") or "").strip()
 

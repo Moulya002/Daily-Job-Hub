@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from psycopg import Connection
 
 from app.scrapers.adzuna import AdzunaJob, build_dedupe_hash
-from app.scrapers.common import NormalizedJob
+from app.scrapers.common import NormalizedJob, strip_html
 from app.scrapers.common import build_dedupe_hash as build_normalized_dedupe_hash
 
 
@@ -63,7 +63,7 @@ def upsert_job_from_adzuna(connection: Connection, *, company_id: str, job: Adzu
                 job.application_url,
                 job.title,
                 normalized_title,
-                job.description,
+                strip_html(job.description),
                 job.location,
                 job.salary_min,
                 job.salary_max,
@@ -128,7 +128,7 @@ def upsert_normalized_job(
                 job.application_url,
                 job.title,
                 normalized_title,
-                job.description,
+                strip_html(job.description),
                 job.location,
                 job.salary_min,
                 job.salary_max,

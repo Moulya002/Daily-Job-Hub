@@ -91,7 +91,8 @@ def _map_item(item: dict, company: str) -> NormalizedJob | None:
     if not title or not url or not external_id:
         return None
 
-    description = strip_html(item.get("description") or item.get("descriptionPlain"))
+    raw = item.get("descriptionPlain") or item.get("description")
+    description = strip_html(raw)
     categories = item.get("categories") or {}
     location = (categories.get("location") or "").strip() or None
     team = (categories.get("team") or "").strip()
