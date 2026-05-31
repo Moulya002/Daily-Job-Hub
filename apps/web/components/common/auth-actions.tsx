@@ -1,30 +1,22 @@
-import { signIn, signOut, auth } from "@/auth";
+import { signOut, auth } from "@/auth";
 import { Button } from "@/components/ui/button";
+import { SignInButton } from "@/components/common/sign-in-button";
 
 export async function AuthActions() {
   const session = await auth();
 
   if (!session?.user) {
-    return (
-      <form
-        action={async () => {
-          "use server";
-          await signIn("github");
-        }}
-      >
-        <Button size="sm">Sign in</Button>
-      </form>
-    );
+    return <SignInButton callbackUrl="/jobs" />;
   }
 
   return (
     <form
       action={async () => {
         "use server";
-        await signOut();
+        await signOut({ redirectTo: "/" });
       }}
     >
-      <Button size="sm" variant="outline">
+      <Button size="sm" variant="outline" type="submit">
         Sign out
       </Button>
     </form>

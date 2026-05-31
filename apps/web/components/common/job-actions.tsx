@@ -24,7 +24,7 @@ export function JobActions({ jobId }: { jobId: string }) {
   const requireSignIn = async (): Promise<boolean> => {
     if (isSignedIn) return true;
     setMessage("Sign in with GitHub to save and track applications.");
-    await signIn("github");
+    await signIn("github", { callbackUrl: "/jobs" });
     return false;
   };
 
