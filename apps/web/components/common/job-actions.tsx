@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 import { applyJob, saveJob, unapplyJob, unsaveJob } from "@/lib/client-api";
 import { Button } from "@/components/ui/button";
@@ -21,16 +21,17 @@ export function JobActions({ jobId }: { jobId: string }) {
   const isSaved = savedJobIds.includes(jobId);
   const isApplied = appliedJobIds.includes(jobId);
 
-  const requireSignIn = async (): Promise<boolean> => {
+  const requireSignIn = (): boolean => {
     if (isSignedIn) return true;
     setMessage("Sign in with GitHub to save and track applications.");
-    await signIn("github", { callbackUrl: "/jobs" });
+    const params = new URLSearchParams({ callbackUrl: "/jobs" });
+    window.location.assign(`/api/auth/signin/github?${params.toString()}`);
     return false;
   };
 
   const onSaveToggle = async () => {
     if (isSaving || status === "loading") return;
-    if (!(await requireSignIn())) return;
+    if (!requireSignIn()) return;
 
     setIsSaving(true);
     setMessage(null);
@@ -52,7 +53,7 @@ export function JobActions({ jobId }: { jobId: string }) {
 
   const onApplyToggle = async () => {
     if (isApplying || status === "loading") return;
-    if (!(await requireSignIn())) return;
+    if (!requireSignIn()) return;
 
     setIsApplying(true);
     setMessage(null);
